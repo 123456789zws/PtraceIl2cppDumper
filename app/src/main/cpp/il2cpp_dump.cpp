@@ -368,7 +368,6 @@ void il2cpp_dump(const char *outDir) {
 
     test_file.close();
 
-    auto domain = il2cpp_domain_get();
     std::stringstream imageOutput;
 
     std::vector<std::string> outPuts;
@@ -379,15 +378,18 @@ void il2cpp_dump(const char *outDir) {
             const char *tassembly_name = assembly_names[i];
             LOGD("dumping:%s\n",tassembly_name);
             auto tassembly = il2cpp_domain_assembly_open(
-                    domain, tassembly_name);
+                    NULL, tassembly_name);
             if(!tassembly){
                 LOGE("erro assembly name:%s\n",tassembly_name);
                 continue;
             }
+            LOGD("test:il2cpp_assembly_get_image\n");
             auto image = il2cpp_assembly_get_image(tassembly);
+            LOGD("test:il2cpp_image_get_name\n");
             imageOutput << "// Image " << i << ": " << il2cpp_image_get_name(image) << "\n";
             std::stringstream imageStr;
             imageStr << "\n// Dll : " << il2cpp_image_get_name(image);
+            LOGD("test:il2cpp_image_get_class_count\n");
             auto classCount = il2cpp_image_get_class_count(image);
             for (int j = 0; j < classCount; ++j) {
                 auto klass = il2cpp_image_get_class(image, j);
