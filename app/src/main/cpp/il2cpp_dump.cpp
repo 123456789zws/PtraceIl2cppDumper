@@ -303,17 +303,17 @@ std::string dump_type_info(Il2CppMetadataType type_info) {
     }
     outPut << type_info.name; //TODO genericContainerIndex
     std::vector<std::string> extends;
-    auto parent = il2cpp_class_get_parent(klass);
-    if (!is_valuetype && !is_enum && parent) {
-        auto parent_type = il2cpp_class_get_type(parent);
-        if (parent_type->type != IL2CPP_TYPE_OBJECT) {
-            extends.emplace_back(il2cpp_class_get_name(parent));
-        }
-    }
-    void *iter = nullptr;
-    while (auto itf = il2cpp_class_get_interfaces(klass, &iter)) {
-        extends.emplace_back(il2cpp_class_get_name(itf));
-    }
+//    auto parent = il2cpp_class_get_parent(klass);
+//    if (!is_valuetype && !is_enum && parent) {
+//        auto parent_type = il2cpp_class_get_type(parent);
+//        if (parent_type->type != IL2CPP_TYPE_OBJECT) {
+//            extends.emplace_back(il2cpp_class_get_name(parent));
+//        }
+//    }
+//    void *iter = nullptr;
+//    while (auto itf = il2cpp_class_get_interfaces(klass, &iter)) {
+//        extends.emplace_back(il2cpp_class_get_name(itf));
+//    }
     if (!extends.empty()) {
         outPut << " : " << extends[0];
         for (int i = 1; i < extends.size(); ++i) {
@@ -327,6 +327,74 @@ std::string dump_type_info(Il2CppMetadataType type_info) {
     //TODO EventInfo
     outPut << "}\n\n";
     return outPut.str();
+}
+
+
+void test_il2cpp_api(Il2CppMetadataType type_info){
+    auto klass = reinterpret_cast<Il2CppClass*>(type_info.typeInfoAddress);
+    LOGD("checking il2cpp_class_is_valuetype...");
+    il2cpp_class_is_valuetype(klass);
+    LOGD("checking il2cpp_class_is_enum...");
+    il2cpp_class_is_enum(klass);
+    LOGD("checking il2cpp_class_get_fields...");
+    void *iter = nullptr;
+    auto field = il2cpp_class_get_fields(klass, &iter);
+    LOGD("checking il2cpp_field_get_flags...");
+    il2cpp_field_get_flags(field);
+    LOGD("checking il2cpp_field_get_type...");
+    auto field_type = il2cpp_field_get_type(field);
+    LOGD("checking il2cpp_class_from_type...");
+    auto field_class = il2cpp_class_from_type(field_type);
+    LOGD("checking il2cpp_class_get_name...");
+    il2cpp_class_get_name(field_class);
+    LOGD("checking il2cpp_field_get_name...");
+    il2cpp_field_get_name(field);
+    LOGD("checking il2cpp_field_static_get_value...");
+    uint64_t val = 0;
+    il2cpp_field_static_get_value(field, &val);
+    LOGD("checking il2cpp_field_get_offset...");
+    il2cpp_field_get_offset(field);
+
+    LOGD("checking il2cpp_class_get_properties...");
+    iter = nullptr;
+    auto prop_const = il2cpp_class_get_properties(klass, &iter);
+
+    auto prop = const_cast<PropertyInfo *>(prop_const);
+    LOGD("checking il2cpp_property_get_get_method...");
+    auto get = il2cpp_property_get_get_method(prop);
+    LOGD("checking il2cpp_property_get_set_method...");
+    il2cpp_property_get_set_method(prop);
+    LOGD("checking il2cpp_property_get_name...");
+    auto prop_name = il2cpp_property_get_name(prop);
+
+    uint32_t iflags = 0;
+    LOGD("checking il2cpp_method_get_flags...");
+    auto method_flag = il2cpp_method_get_flags(get, &iflags);
+    LOGD("checking get_method_modifier...");
+    get_method_modifier(method_flag);
+    LOGD("checking il2cpp_method_get_return_type...");
+    auto return_type = il2cpp_method_get_return_type(get);
+    LOGD("checking il2cpp_type_is_byref...");
+    il2cpp_type_is_byref(return_type);
+
+    iter = nullptr;
+    LOGD("checking il2cpp_class_get_methods...");
+    auto method = il2cpp_class_get_methods(klass, &iter);
+    LOGD("checking il2cpp_method_get_name...");
+    il2cpp_method_get_name(method);
+    LOGD("checking il2cpp_method_get_param_count...");
+    auto count = il2cpp_method_get_param_count(method);
+    if(count!=0){
+        LOGD("checking il2cpp_method_get_param...");
+        il2cpp_method_get_param(method, 0);
+        LOGD("checking il2cpp_method_get_param_name...");
+        il2cpp_method_get_param_name(method, 0);
+    } else{
+        LOGE("no test il2cpp_method_get_param and il2cpp_method_get_param_name");
+    }
+
+    LOGD("all test success.");
+
 }
 
 void il2cpp_api_init(void *handle) {
@@ -360,6 +428,15 @@ void il2cpp_dump(const char *outDir) {
         auto all_type_infos_count = memorySnapshot->metadata.typeCount;
         auto all_type_infos = memorySnapshot->metadata.types;
         LOGD("all_typeCount:%d",all_type_infos_count);
+
+        for (int i = 0; i < all_type_infos_count; ++i) {
+            if(strcmp(all_type_infos[i].name,"System.String")==0){
+                LOGD("test start.");
+                test_il2cpp_api(all_type_infos[i]);
+                break;
+            }
+        }
+
         for (int k = 0; k < all_type_infos_count; ++k) {
             auto tmp_type_info = all_type_infos[k];
             auto outPut = std::string(tmp_type_info.assemblyName)+".dll\n"+ dump_type_info(tmp_type_info);
@@ -380,6 +457,8 @@ void il2cpp_dump(const char *outDir) {
     for (int i = 0; i < count; ++i) {
         outStream << outPuts[i];
     }
+
+
     outStream.close();
     LOGI("dump done!");
 }
