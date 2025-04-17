@@ -400,9 +400,9 @@ void test_il2cpp_api(Il2CppMetadataType type_info){
 void il2cpp_api_init(void *handle) {
     LOGI("il2cpp_handle: %p", handle);
     init_il2cpp_api(handle);
-    if (il2cpp_domain_get_assemblies) {
+    if (il2cpp_capture_memory_snapshot) {
         Dl_info dlInfo;
-        if (dladdr((void *) il2cpp_domain_get_assemblies, &dlInfo)) {
+        if (dladdr((void *) il2cpp_capture_memory_snapshot, &dlInfo)) {
             il2cpp_base = reinterpret_cast<uint64_t>(dlInfo.dli_fbase);
         }
         LOGI("il2cpp_base: %" PRIx64"", il2cpp_base);
@@ -414,8 +414,8 @@ void il2cpp_api_init(void *handle) {
         LOGI("Waiting for il2cpp_init...");
         sleep(1);
     }
-    auto domain = il2cpp_domain_get();
-    il2cpp_thread_attach(domain);
+//    auto domain = il2cpp_domain_get();
+//    il2cpp_thread_attach(domain);
 }
 
 void il2cpp_dump(const char *outDir) {
