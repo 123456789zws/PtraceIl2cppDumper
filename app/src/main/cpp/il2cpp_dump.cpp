@@ -25,6 +25,7 @@
 
 
 static uint64_t il2cpp_base = 0;
+std::stringstream method_info_outPut;
 
 void init_il2cpp_api(void *handle) {
 #define DO_API(r, n, p) {                      \
@@ -102,6 +103,7 @@ std::string dump_method(Il2CppClass *klass) {
         if (method->methodPointer) {
             outPut << "\t// RVA: 0x";
             outPut << std::hex << (uint64_t) method->methodPointer - il2cpp_base;
+            method_info_outPut << std::hex << (uint64_t) method->methodPointer - il2cpp_base;
             outPut << " VA: 0x";
             outPut << std::hex << (uint64_t) method->methodPointer;
         } else {
@@ -120,8 +122,12 @@ std::string dump_method(Il2CppClass *klass) {
             outPut << "ref ";
         }
         auto return_class = il2cpp_class_from_type(return_type);
-        outPut << il2cpp_class_get_name(return_class) << " " << il2cpp_method_get_name(method)
+        auto method_name = il2cpp_method_get_name(method);
+        outPut << il2cpp_class_get_name(return_class) << " " << method_name
                << "(";
+        if(method->methodPointer){
+            method_info_outPut << ":" << method_name << "\n";
+        }
         auto param_count = il2cpp_method_get_param_count(method);
         for (int i = 0; i < param_count; ++i) {
             auto param = il2cpp_method_get_param(method, i);
@@ -420,9 +426,7 @@ void il2cpp_api_init(void *handle) {
 
 void il2cpp_dump(const char *outDir) {
     LOGI("dumping...");
-    std::stringstream imageOutput;
     std::vector<std::string> outPuts;
-
     if (il2cpp_capture_memory_snapshot && il2cpp_free_captured_memory_snapshot) {
         auto memorySnapshot = il2cpp_capture_memory_snapshot();
         auto all_type_infos_count = memorySnapshot->metadata.typeCount;
@@ -447,18 +451,27 @@ void il2cpp_dump(const char *outDir) {
         LOGE("can not find il2cpp_capture_memory_snapshot!!!");
     }
 
-
-
     LOGI("write dump file");
-    auto outPath = std::string(outDir).append("/files/dump.cs");
+    auto outPath = std::string(outDir).append("/files/test.cs");
     std::ofstream outStream(outPath);
-    outStream << imageOutput.str();
-    auto count = outPuts.size();
-    for (int i = 0; i < count; ++i) {
-        outStream << outPuts[i];
-    }
+    auto outPath2 = std::string(outDir).append("/files/test_method_info.txt");
+    std::ofstream outStream2(outPath2);
 
+    if(outStream.is_open()){
+        auto count = outPuts.size();
+        for (int i = 0; i < count; ++i) {
+            outStream << outPuts[i];
+        }
+    } else
+        LOGE("can not open file:%s",outPath.c_str());
 
     outStream.close();
+    if (outStream2.is_open()){
+        outStream2 << method_info_outPut.str();
+    } else
+        LOGE("can not open file:%s",outPath2.c_str());
+    method_info_outPut.flush();
+    method_info_outPut.clear();
+    outStream2.close();
     LOGI("dump done!");
 }
