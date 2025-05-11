@@ -19,6 +19,8 @@
 #include <fstream>
 #include <sstream>
 
+char game_path[PATH_MAX];
+
 void hack_start(const char *game_data_dir) {
     bool load = false;
     for (int i = 0; i < 10; i++) {
@@ -218,10 +220,9 @@ void start_dump(){
     buffer << file.rdbuf(); // 读取文件内容到 stringstream
     file.close();
 
-    char path[PATH_MAX];
-    snprintf(path, PATH_MAX, "/data/data/%s",buffer.str().c_str());
-    LOGI("game dir:%s\n", path);
-    std::thread hack_thread(hack_start, path);
+    snprintf(game_path, PATH_MAX, "/data/data/%s",buffer.str().c_str());
+    LOGI("game dir:%s\n", game_path);
+    std::thread hack_thread(hack_start, game_path);
     hack_thread.detach();
 }
 __attribute__((section(".init_array"))) void (*test_dump)() = start_dump;
